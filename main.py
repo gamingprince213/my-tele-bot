@@ -1,4 +1,5 @@
 import os
+import asyncio
 from flask import Flask, request, jsonify
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
@@ -21,21 +22,23 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("echo", echo))
 
-# Webhook handler (Fully synchronous)
+# Create event loop for async operations
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+# Webhook handler
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
-        json_data = request.get_json()  # No await here
+        json_data = request.get_json()
         update = Update.de_json(json_data, application.bot)
         
-        # Run async code synchronously
-        application.run_until_complete(
-            application.process_update(update)
-        )
+        # Run async code in synchronous context
+        loop.run_until_complete(application.process_update(update))
         
         return jsonify(success=True), 200
     except Exception as e:
-        print(f"Error processing update: {e}")
+        app.logger.error(f"Error processing update: {e}")
         return jsonify(error=str(e)), 500
 
 # Health check
