@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
@@ -21,18 +21,21 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("echo", echo))
 
-# Webhook endpoint
+# Webhook handler (Synchronous)
 @app.route('/webhook', methods=['POST'])
-async def webhook():
-    json_data = await request.get_json()
+def webhook():
+    json_data = request.get_json()  # await ছাড়াই সরাসরি JSON পড়ুন
     update = Update.de_json(json_data, application.bot)
-    await application.process_update(update)
-    return '', 200
+    
+    # Async টাস্ক সিঙ্ক্রোনাসলি রান করান
+    application.create_task(application.process_update(update))
+    
+    return jsonify(success=True), 200
 
 # Health check
 @app.route('/')
-def home():
-    return "বট অ্যাক্টিভ ✅", 200
+def health_check():
+    return "বট সচল ✅", 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
