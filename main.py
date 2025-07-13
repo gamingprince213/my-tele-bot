@@ -1,39 +1,39 @@
+# main.py
 import os
 from flask import Flask, request
-from telegram import Update, Bot
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
 
 app = Flask(__name__)
 TOKEN = os.environ.get('TOKEN')
-bot = Bot(token=TOKEN)
 
-# Create Application
+# Initialize Telegram application
 application = Application.builder().token(TOKEN).build()
 
-# Handlers
+# Command handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hello! I'm a Render-hosted bot! 🚀")
+    await update.message.reply_text("🚀 Hello! I'm running on Render.com!")
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = ' '.join(context.args)
-    await update.message.reply_text(f"🔊: {text}")
+    await update.message.reply_text(f"🔊 You said: {text}")
 
 # Register handlers
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("echo", echo))
 
 # Webhook endpoint
-@app.post('/webhook')
+@app.route('/webhook', methods=['POST'])
 async def webhook():
-    await application.update_queue.put(
-        Update.de_json(data=request.json, bot=bot)
+    update = Update.de_json(request.get_json(), application.bot)
+    await application.process_update(update)
     return '', 200
 
-# Health check
-@app.get('/')
+# Health check route for Render
+@app.route('/')
 def health_check():
-    return 'Bot is running!', 200
+    return 'Telegram bot is running!', 200
 
 if __name__ == '__main__':
-    application.initialize()
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
