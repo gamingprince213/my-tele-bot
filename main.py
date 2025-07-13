@@ -21,20 +21,26 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("echo", echo))
 
-# Webhook handler (Synchronous)
+# Webhook handler (Fully synchronous)
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    json_data = request.get_json()  # await ছাড়াই সরাসরি JSON পড়ুন
-    update = Update.de_json(json_data, application.bot)
-    
-    # Async টাস্ক সিঙ্ক্রোনাসলি রান করান
-    application.create_task(application.process_update(update))
-    
-    return jsonify(success=True), 200
+    try:
+        json_data = request.get_json()  # No await here
+        update = Update.de_json(json_data, application.bot)
+        
+        # Run async code synchronously
+        application.run_until_complete(
+            application.process_update(update)
+        )
+        
+        return jsonify(success=True), 200
+    except Exception as e:
+        print(f"Error processing update: {e}")
+        return jsonify(error=str(e)), 500
 
 # Health check
 @app.route('/')
-def health_check():
+def home():
     return "বট সচল ✅", 200
 
 if __name__ == '__main__':
