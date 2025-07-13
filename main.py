@@ -7,8 +7,11 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 app = Flask(__name__)
 TOKEN = os.environ.get('TOKEN')
 
-# Initialize Telegram app
+# Initialize Telegram app with event loop
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 application = Application.builder().token(TOKEN).build()
+loop.run_until_complete(application.initialize())  # Initialize explicitly
 
 # Command handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -22,10 +25,6 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("echo", echo))
 
-# Create event loop for async operations
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-
 # Webhook handler
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -33,12 +32,12 @@ def webhook():
         json_data = request.get_json()
         update = Update.de_json(json_data, application.bot)
         
-        # Run async code in synchronous context
+        # Process update synchronously
         loop.run_until_complete(application.process_update(update))
-        
         return jsonify(success=True), 200
+        
     except Exception as e:
-        app.logger.error(f"Error processing update: {e}")
+        app.logger.error(f"Error: {str(e)}")
         return jsonify(error=str(e)), 500
 
 # Health check
