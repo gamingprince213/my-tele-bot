@@ -1,0 +1,4 @@
+# requirements.txt
+python-dotenv
+flask
+python-telegram-bot==13.7
