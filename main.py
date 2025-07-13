@@ -1,4 +1,3 @@
-# main.py
 import os
 from flask import Flask, request
 from telegram import Update
@@ -7,16 +6,16 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 app = Flask(__name__)
 TOKEN = os.environ.get('TOKEN')
 
-# Initialize Telegram application
+# Initialize Telegram app
 application = Application.builder().token(TOKEN).build()
 
 # Command handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🚀 Hello! I'm running on Render.com!")
+    await update.message.reply_text("🚀 হ্যালো! আমি Render.com এ হোস্ট করা একটি টেলিগ্রাম বট!")
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = ' '.join(context.args)
-    await update.message.reply_text(f"🔊 You said: {text}")
+    await update.message.reply_text(f"📢 আপনি লিখেছেন: {text}")
 
 # Register handlers
 application.add_handler(CommandHandler("start", start))
@@ -25,14 +24,15 @@ application.add_handler(CommandHandler("echo", echo))
 # Webhook endpoint
 @app.route('/webhook', methods=['POST'])
 async def webhook():
-    update = Update.de_json(request.get_json(), application.bot)
+    json_data = await request.get_json()
+    update = Update.de_json(json_data, application.bot)
     await application.process_update(update)
     return '', 200
 
-# Health check route for Render
+# Health check
 @app.route('/')
-def health_check():
-    return 'Telegram bot is running!', 200
+def home():
+    return "বট অ্যাক্টিভ ✅", 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
